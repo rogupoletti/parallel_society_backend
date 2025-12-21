@@ -70,8 +70,10 @@ export const importSnapshot = functions.https.onRequest(async (req, res) => {
                 startTime: startTime,
                 endTime: endTime,
                 status: sp.state === 'active' ? 'ACTIVE' : 'CLOSED',
-                totalFor: 0,
-                totalAgainst: 0,
+                totalFor: '0',
+                totalAgainst: '0',
+                totalVoters: 0,
+                tokenPowerVoted: '0',
                 snapshotId: sp.id // Keep track of Snapshot ID
             };
 

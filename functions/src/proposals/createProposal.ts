@@ -85,8 +85,10 @@ export const createProposal = functions.https.onRequest(async (req, res) => {
             startTime,
             endTime,
             status: 'ACTIVE',
-            totalFor: 0,
-            totalAgainst: 0
+            totalFor: '0',
+            totalAgainst: '0',
+            totalVoters: 0,
+            tokenPowerVoted: '0'
         };
 
         console.log('Adding proposal to Firestore...');

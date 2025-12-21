@@ -1,5 +1,7 @@
 import * as functions from 'firebase-functions';
 import { db } from '../firebase';
+import { finalizeProposalIfNeeded } from '../services/finalize';
+import { Proposal } from '../types';
 
 export const listProposals = functions.https.onRequest(async (req, res) => {
     // CORS Header
@@ -22,22 +24,26 @@ export const listProposals = functions.https.onRequest(async (req, res) => {
             .orderBy('createdAt', 'desc')
             .get();
 
-        const proposals = snapshot.docs.map(doc => {
-            const data = doc.data();
+        const proposals = await Promise.all(snapshot.docs.map(async doc => {
+            const data = doc.data() as Proposal;
+            const finalized = await finalizeProposalIfNeeded(doc.id, data);
+
             return {
                 id: doc.id,
-                title: data.title,
-                category: data.category,
-                description: data.description,
-                authorAddress: data.authorAddress,
-                createdAt: data.createdAt.toMillis(),
-                startTime: data.startTime.toMillis(),
-                endTime: data.endTime.toMillis(),
-                status: data.status,
-                totalFor: data.totalFor,
-                totalAgainst: data.totalAgainst
+                title: finalized.title,
+                category: finalized.category,
+                description: finalized.description,
+                authorAddress: finalized.authorAddress,
+                createdAt: finalized.createdAt.toMillis(),
+                startTime: finalized.startTime.toMillis(),
+                endTime: finalized.endTime.toMillis(),
+                status: finalized.status,
+                totalFor: finalized.totalFor || '0',
+                totalAgainst: finalized.totalAgainst || '0',
+                totalVoters: finalized.totalVoters || 0,
+                tokenPowerVoted: finalized.tokenPowerVoted || '0'
             };
-        });
+        }));
 
         res.status(200).json(proposals);
     } catch (error: any) {

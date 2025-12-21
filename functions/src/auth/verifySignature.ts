@@ -28,9 +28,12 @@ export const verify = functions.https.onRequest(async (req, res) => {
     const normalizedAddress = address.toLowerCase();
 
     try {
+        console.log(`Verifying signature for address: ${normalizedAddress}`);
+
         // 1. Get Nonce
         const nonce = await getNonce(normalizedAddress);
         if (!nonce) {
+            console.warn(`Nonce not found for address: ${normalizedAddress}`);
             res.status(400).send('Nonce not found or expired');
             return;
         }
@@ -38,11 +41,13 @@ export const verify = functions.https.onRequest(async (req, res) => {
         // 2. Verify Signature
         const isValid = verifySignature(normalizedAddress, nonce, signature);
         if (!isValid) {
+            console.warn(`Invalid signature for address: ${normalizedAddress}`);
             res.status(401).send('Invalid signature');
             return;
         }
 
         // 3. User Entity Logic
+        console.log(`Updating user record for: ${normalizedAddress}`);
         const userRef = db.collection('users').doc(normalizedAddress);
         const userDoc = await userRef.get();
 
@@ -59,8 +64,14 @@ export const verify = functions.https.onRequest(async (req, res) => {
         }
 
         // 4. Create Custom Token
-        // uid is the wallet address
-        const customToken = await auth.createCustomToken(normalizedAddress);
+        console.log(`Creating custom token for: ${normalizedAddress}`);
+        let customToken;
+        try {
+            customToken = await auth.createCustomToken(normalizedAddress);
+        } catch (tokenError) {
+            console.error('Error creating custom token:', tokenError);
+            throw new Error(`Token creation failed: ${tokenError instanceof Error ? tokenError.message : 'Unknown error'}`);
+        }
 
         // 5. Invalidate Nonce
         await invalidateNonce(normalizedAddress);
@@ -68,7 +79,7 @@ export const verify = functions.https.onRequest(async (req, res) => {
         res.status(200).json({ token: customToken });
 
     } catch (error) {
-        console.error('Error verifying signature:', error);
-        res.status(500).send('Internal Server Error');
+        console.error('Full verification error:', error);
+        res.status(500).send(`Internal Server Error: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
 });
