@@ -12,9 +12,15 @@ service cloud.firestore {
     // users:
     // Users can read their own profile.
     // Creation and updates are handled by the backend.
-    match /users/{walletAddress} {
-      allow read: if request.auth != null && request.auth.uid == walletAddress;
-      allow write: if false;
+    match /users/{userId} {
+      allow read: if request.auth != null && request.auth.uid == userId;
+      allow write: if false; // Only Admin SDK (backend)
+    }
+
+    // Phase 2: Proposals collection
+    match /proposals/{proposalId} {
+      allow read: if true; // Public listing
+      allow write: if false; // Managed by backend functions
     }
   }
 }
