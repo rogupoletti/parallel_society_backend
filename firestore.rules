@@ -1,0 +1,20 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // auth_nonces:
+    // Only the backend (Functions) should write/read these.
+    // However, since Functions use Admin SDK, they bypass these rules.
+    // We strictly deny all access from the client SDKs.
+    match /auth_nonces/{walletAddress} {
+      allow read, write: if false;
+    }
+
+    // users:
+    // Users can read their own profile.
+    // Creation and updates are handled by the backend.
+    match /users/{walletAddress} {
+      allow read: if request.auth != null && request.auth.uid == walletAddress;
+      allow write: if false;
+    }
+  }
+}
