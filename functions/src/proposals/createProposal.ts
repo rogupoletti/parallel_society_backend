@@ -1,7 +1,7 @@
 import * as functions from 'firebase-functions';
 import { db } from '../firebase';
 import { verifyAuthToken } from '../services/auth';
-import { getLUTBalance } from '../services/lutBalance';
+import { getLUTBalance, provider } from '../services/lutBalance';
 import { CreateProposalRequest, Proposal } from '../types';
 import * as admin from 'firebase-admin';
 
@@ -66,7 +66,11 @@ export const createProposal = functions.https.onRequest(async (req, res) => {
             return;
         }
 
-        // 4. Set Times
+        // 4. Capture Snapshot Block
+        const snapshotBlock = await provider.getBlockNumber();
+        console.log(`Snapshot block captured: ${snapshotBlock}`);
+
+        // 5. Set Times
         const now = admin.firestore.Timestamp.now();
         const startTime = body.startTime ?
             admin.firestore.Timestamp.fromMillis(body.startTime) :
@@ -75,7 +79,7 @@ export const createProposal = functions.https.onRequest(async (req, res) => {
             admin.firestore.Timestamp.fromMillis(body.endTime) :
             admin.firestore.Timestamp.fromMillis(now.toMillis() + (3 * 24 * 60 * 60 * 1000)); // Now + 3 days
 
-        // 5. Create Proposal
+        // 6. Create Proposal
         const proposal: Proposal = {
             title: body.title,
             category: body.category,
@@ -85,10 +89,13 @@ export const createProposal = functions.https.onRequest(async (req, res) => {
             startTime,
             endTime,
             status: 'ACTIVE',
-            totalFor: '0',
-            totalAgainst: '0',
+            totalForRaw: '0',
+            totalAgainstRaw: '0',
+            tokenPowerVotedRaw: '0',
             totalVoters: 0,
-            tokenPowerVoted: '0'
+            snapshotBlock,
+            snapshotChainId: 30, // RSK Mainnet
+            strategy: 'lut-erc20-balance@block'
         };
 
         console.log('Adding proposal to Firestore...');

@@ -38,10 +38,10 @@ export const listProposals = functions.https.onRequest(async (req, res) => {
                 startTime: finalized.startTime.toMillis(),
                 endTime: finalized.endTime.toMillis(),
                 status: finalized.status,
-                totalFor: finalized.totalFor || '0',
-                totalAgainst: finalized.totalAgainst || '0',
+                totalForRaw: finalized.totalForRaw || '0',
+                totalAgainstRaw: finalized.totalAgainstRaw || '0',
                 totalVoters: finalized.totalVoters || 0,
-                tokenPowerVoted: finalized.tokenPowerVoted || '0'
+                tokenPowerVotedRaw: finalized.tokenPowerVotedRaw || '0'
             };
         }));
 

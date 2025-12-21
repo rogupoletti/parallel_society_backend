@@ -1,7 +1,7 @@
 import * as functions from 'firebase-functions';
 import { db } from '../firebase';
 import { verifyAuthToken } from '../services/auth';
-import { getLUTBalanceRaw } from '../services/lutBalance';
+import { getBalanceAtBlock } from '../services/lutBalance';
 import { recomputeTally } from '../services/tally';
 import * as admin from 'firebase-admin';
 
@@ -61,7 +61,16 @@ export const voteOnProposal = functions.https.onRequest(async (req, res) => {
         }
 
         // 4. Fetch Voter Weight
-        const weight = await getLUTBalanceRaw(voterAddress);
+        // Backward compatibility: use 'latest' if snapshotBlock is missing
+        const snapshotBlock = proposal.snapshotBlock || 'latest';
+        const weightRaw = await getBalanceAtBlock(voterAddress, snapshotBlock);
+
+        console.log(`Voting power for ${voterAddress} at block ${snapshotBlock}: ${weightRaw}`);
+
+        if (BigInt(weightRaw) === BigInt(0)) {
+            res.status(403).json({ error: 'No voting power at snapshot block' });
+            return;
+        }
 
         // 5. Upsert Vote
         const voteId = `${id}_${voterAddress}`;
@@ -69,7 +78,7 @@ export const voteOnProposal = functions.https.onRequest(async (req, res) => {
             proposalId: id,
             voterAddress,
             choice,
-            weight,
+            weightRaw,
             updatedAt: now,
             createdAt: admin.firestore.FieldValue.serverTimestamp().isEqual(admin.firestore.FieldValue.serverTimestamp()) ? now : admin.firestore.FieldValue.serverTimestamp()
         };
@@ -91,7 +100,7 @@ export const voteOnProposal = functions.https.onRequest(async (req, res) => {
 
         res.status(200).json({
             message: 'Vote recorded successfully',
-            myVote: { choice, weight },
+            myVote: { choice, weightRaw },
             proposal: { ...proposal, ...tally, id }
         });
 

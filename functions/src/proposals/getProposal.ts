@@ -2,6 +2,7 @@ import * as functions from 'firebase-functions';
 import { db } from '../firebase';
 import { finalizeProposalIfNeeded } from '../services/finalize';
 import { verifyAuthToken } from '../services/auth';
+import { getBalanceAtBlock } from '../services/lutBalance';
 import { Proposal } from '../types';
 
 export const getProposal = functions.https.onRequest(async (req, res) => {
@@ -42,20 +43,35 @@ export const getProposal = functions.https.onRequest(async (req, res) => {
         const data = doc.data() as Proposal;
         const finalized = await finalizeProposalIfNeeded(id, data);
 
-        // Fetch user's vote if authenticated
+        // Fetch user's vote and voting power if authenticated
         let myVote = null;
+        let userVotingPowerRaw = '0';
         const authHeader = req.headers.authorization;
         if (authHeader) {
             try {
-                const voterAddress = await verifyAuthToken(authHeader);
-                const voteDoc = await db.collection('votes').doc(`${id}_${voterAddress.toLowerCase()}`).get();
+                const voterAddress = await verifyAuthToken(authHeader); // returns lowercased
+                const lowerVoterAddress = voterAddress.toLowerCase();
+
+                // 1. Get My Vote
+                const voteDoc = await db.collection('votes').doc(`${id}_${lowerVoterAddress}`).get();
                 if (voteDoc.exists) {
                     const vData = voteDoc.data()!;
                     myVote = {
                         choice: vData.choice,
-                        weight: vData.weight
+                        weightRaw: vData.weightRaw
                     };
                 }
+
+                // 2. Get Snapshot Voting Power
+                // Use snapshotBlock from the proposal data
+                const snapshotBlock = data.snapshotBlock || 'latest';
+                try {
+                    userVotingPowerRaw = await getBalanceAtBlock(lowerVoterAddress, snapshotBlock);
+                    console.log(`[getProposal] Resolved voting power for ${lowerVoterAddress} at block ${snapshotBlock}: ${userVotingPowerRaw}`);
+                } catch (balanceErr: any) {
+                    console.error('[getProposal] Failed to get voting power:', balanceErr.message);
+                }
+
             } catch (authError) {
                 console.warn('Silent auth failed in getProposal:', authError);
             }
@@ -68,7 +84,8 @@ export const getProposal = functions.https.onRequest(async (req, res) => {
             startTime: finalized.startTime.toMillis(),
             endTime: finalized.endTime.toMillis(),
             finalizedAt: finalized.finalizedAt?.toMillis() || null,
-            myVote
+            myVote,
+            userVotingPowerRaw
         });
     } catch (error: any) {
         console.error('Error getting proposal:', error);

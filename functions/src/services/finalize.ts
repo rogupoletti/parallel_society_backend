@@ -26,7 +26,7 @@ export async function finalizeProposalIfNeeded(proposalId: string, proposalData:
     console.log(`Finalizing proposal ${proposalId}...`);
     const tally = await recomputeTally(proposalId);
 
-    const isPassed = compareRaw(tally.totalFor, tally.totalAgainst) > 0;
+    const isPassed = compareRaw(tally.totalForRaw, tally.totalAgainstRaw) > 0;
     const finalStatus: 'PASSED' | 'FAILED' = isPassed ? 'PASSED' : 'FAILED';
 
     const updateData = {

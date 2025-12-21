@@ -1,35 +1,36 @@
 import { db } from '../firebase';
-import { addRaw } from './numbers';
+
 
 export async function recomputeTally(proposalId: string): Promise<{
-    totalFor: string;
-    totalAgainst: string;
+    totalForRaw: string;
+    totalAgainstRaw: string;
     totalVoters: number;
-    tokenPowerVoted: string;
+    tokenPowerVotedRaw: string;
 }> {
     const votesSnapshot = await db.collection('votes')
         .where('proposalId', '==', proposalId)
         .get();
 
-    let totalFor = '0';
-    let totalAgainst = '0';
+    let totalForRaw = BigInt(0);
+    let totalAgainstRaw = BigInt(0);
     let totalVoters = votesSnapshot.size;
 
     votesSnapshot.forEach(doc => {
         const vote = doc.data();
+        const weight = BigInt(vote.weightRaw || '0'); // Safety fallback
         if (vote.choice === 'FOR') {
-            totalFor = addRaw(totalFor, vote.weight);
+            totalForRaw += weight;
         } else if (vote.choice === 'AGAINST') {
-            totalAgainst = addRaw(totalAgainst, vote.weight);
+            totalAgainstRaw += weight;
         }
     });
 
-    const tokenPowerVoted = addRaw(totalFor, totalAgainst);
+    const tokenPowerVotedRaw = (totalForRaw + totalAgainstRaw).toString();
 
     return {
-        totalFor,
-        totalAgainst,
+        totalForRaw: totalForRaw.toString(),
+        totalAgainstRaw: totalAgainstRaw.toString(),
         totalVoters,
-        tokenPowerVoted
+        tokenPowerVotedRaw
     };
 }

@@ -2,7 +2,7 @@ import { ethers } from 'ethers';
 import * as dotenv from 'dotenv';
 dotenv.config();
 
-const provider = new ethers.JsonRpcProvider(process.env.RSK_RPC_URL);
+export const provider = new ethers.JsonRpcProvider(process.env.RSK_RPC_URL);
 const LUT_TOKEN_ADDRESS = process.env.LUT_TOKEN_ADDRESS || '';
 const LUT_TOKEN_DECIMALS = parseInt(process.env.LUT_TOKEN_DECIMALS || '18');
 
@@ -24,6 +24,24 @@ export async function getLUTBalanceRaw(address: string): Promise<string> {
     } catch (error: any) {
         console.error("Error fetching LUT balance from RSK:", error.message);
         throw new Error("Failed to verify LUT balance. Please ensure the RSK network is accessible.");
+    }
+}
+
+
+export async function getBalanceAtBlock(address: string, blockTag: number | string): Promise<string> {
+    if (!LUT_TOKEN_ADDRESS) {
+        throw new Error("Backend configuration error: LUT_TOKEN_ADDRESS missing");
+    }
+    try {
+        console.log(`[getBalanceAtBlock] Fetching for ${address} at tag: ${blockTag}`);
+        const contract = new ethers.Contract(LUT_TOKEN_ADDRESS, ERC20_ABI, provider);
+        // Pass blockTag in overrides
+        const balanceBN = await contract.balanceOf(address, { blockTag });
+        console.log(`[getBalanceAtBlock] Result: ${balanceBN.toString()}`);
+        return balanceBN.toString();
+    } catch (error: any) {
+        console.error(`Error fetching LUT balance at block ${blockTag}:`, error.message);
+        throw new Error("Failed to fetch historical balance. RPC may not support this snapshot.");
     }
 }
 
