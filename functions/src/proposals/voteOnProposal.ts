@@ -3,7 +3,7 @@ import { db } from '../firebase';
 import { verifyAuthToken } from '../services/auth';
 import { getBalanceAtBlock } from '../services/lutBalance';
 import { recomputeTally } from '../services/tally';
-import { verifyVoteSignature, computeMessageHash, VoteMessage } from '../services/eip712';
+import { verifyVoteSignature, computeVoteHash, VoteMessage } from '../services/eip712';
 import * as admin from 'firebase-admin';
 
 export const voteOnProposal = functions.https.onRequest(async (req, res) => {
@@ -100,7 +100,7 @@ export const voteOnProposal = functions.https.onRequest(async (req, res) => {
         console.log(`[Vote] ✅ Signature verified successfully!`);
 
         // Compute message hash for storage
-        const messageHash = await computeMessageHash(voteMessage);
+        const messageHash = await computeVoteHash(voteMessage);
 
         // 4. Check Status
         if (now.toMillis() < proposal.startTime.toMillis()) {

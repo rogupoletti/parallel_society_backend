@@ -38,6 +38,20 @@ export interface Proposal {
     totalVoters: number;
     finalizedAt?: any;
     userVotingPowerRaw?: string; // Voting power of the authenticated user at snapshot
+
+    // IPFS Pinned Artifacts
+    proposalCid?: string | null;
+    proposalCidPinnedAt?: any | null;
+    proposalCidStatus?: 'pinned' | 'pending' | 'failed';
+
+    resultsCid?: string | null;
+    resultsCidPinnedAt?: any | null;
+    resultsCidStatus?: 'pinned' | 'pending' | 'failed';
+
+    // Signature verification
+    signature?: string;
+    messageHash?: string;
+    timestamp?: number;
 }
 
 export interface Vote {
@@ -55,4 +69,7 @@ export interface CreateProposalRequest {
     description: string;
     startTime?: number;
     endTime?: number;
+    signature: string;
+    messageHash: string;
+    timestamp: number;
 }
