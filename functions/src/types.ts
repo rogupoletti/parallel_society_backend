@@ -73,4 +73,5 @@ export interface CreateProposalRequest {
     signature: string;
     messageHash: string;
     timestamp: number;
+    snapshotBlock: number;
 }

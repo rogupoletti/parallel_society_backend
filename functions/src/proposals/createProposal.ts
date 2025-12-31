@@ -62,7 +62,7 @@ export const createProposal = functions.https.onRequest(async (req, res) => {
         console.log('Validating proposal body:', body);
 
         // 3. Validate Body
-        if (!body.title || !body.category || !body.description || !body.signature || !body.messageHash || !body.timestamp) {
+        if (!body.title || !body.category || !body.description || !body.signature || !body.messageHash || !body.timestamp || !body.snapshotBlock) {
             console.warn('Missing required fields');
             res.status(400).json({ error: 'Missing required fields (including signature/hash/timestamp)' });
             return;
@@ -87,7 +87,7 @@ export const createProposal = functions.https.onRequest(async (req, res) => {
             choices: ["For", "Against"],
             start: Math.floor(startTimeVal / 1000),
             end: Math.floor(endTimeVal / 1000),
-            snapshot: snapshotBlock,
+            snapshot: body.snapshotBlock, // Use the snapshot signed by the user
             plugins: "{}",
             app: "parallel"
         };
