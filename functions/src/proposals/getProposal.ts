@@ -77,9 +77,17 @@ export const getProposal = functions.https.onRequest(async (req, res) => {
             }
         }
 
+        // Fetch author's username
+        let authorName = null;
+        const authorDoc = await db.collection('users').doc(finalized.authorAddress.toLowerCase()).get();
+        if (authorDoc.exists) {
+            authorName = authorDoc.data()?.username || null;
+        }
+
         res.status(200).json({
             id: doc.id,
             ...finalized,
+            authorName,
             createdAt: finalized.createdAt.toMillis(),
             startTime: finalized.startTime.toMillis(),
             endTime: finalized.endTime.toMillis(),

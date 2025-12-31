@@ -24,16 +24,41 @@ export const listProposals = functions.https.onRequest(async (req, res) => {
             .orderBy('createdAt', 'desc')
             .get();
 
-        const proposals = await Promise.all(snapshot.docs.map(async doc => {
-            const data = doc.data() as Proposal;
-            const finalized = await finalizeProposalIfNeeded(doc.id, data);
+        const rawProposals = snapshot.docs.map(doc => ({
+            id: doc.id,
+            ...(doc.data() as Proposal)
+        }));
+
+        // 1. Collect unique author addresses
+        const authorAddresses = [...new Set(rawProposals.map(p => p.authorAddress.toLowerCase()))];
+
+        // 2. Fetch usernames for these addresses
+        const authorMap: { [address: string]: string } = {};
+        if (authorAddresses.length > 0) {
+            // Firestore limit is 10 for 'in' queries, but we can do multiple or just fetch by doc ID
+            // Since we might have many authors, let's just fetch them in chunks if needed or individually
+            // Actually, for moderate numbers, Promise.all on doc(addr).get() is fine
+            await Promise.all(authorAddresses.map(async addr => {
+                const userDoc = await db.collection('users').doc(addr).get();
+                if (userDoc.exists) {
+                    const userData = userDoc.data();
+                    if (userData?.username) {
+                        authorMap[addr] = userData.username;
+                    }
+                }
+            }));
+        }
+
+        const proposals = await Promise.all(rawProposals.map(async p => {
+            const finalized = await finalizeProposalIfNeeded(p.id!, p);
 
             return {
-                id: doc.id,
+                id: p.id,
                 title: finalized.title,
                 category: finalized.category,
                 description: finalized.description,
                 authorAddress: finalized.authorAddress,
+                authorName: authorMap[finalized.authorAddress.toLowerCase()] || null,
                 createdAt: finalized.createdAt.toMillis(),
                 startTime: finalized.startTime.toMillis(),
                 endTime: finalized.endTime.toMillis(),

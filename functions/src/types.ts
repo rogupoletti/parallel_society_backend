@@ -19,6 +19,7 @@ export interface Proposal {
     category: string;
     description: string;
     authorAddress: string;
+    authorName?: string;
     createdAt: any;
     startTime: any;
     endTime: any;

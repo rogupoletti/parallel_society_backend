@@ -18,7 +18,7 @@ export const verify = functions.https.onRequest(async (req, res) => {
         return;
     }
 
-    const { address, signature } = req.body;
+    const { address, signature, username, email } = req.body;
 
     if (!address || !signature) {
         res.status(400).send('Missing address or signature');
@@ -51,16 +51,19 @@ export const verify = functions.https.onRequest(async (req, res) => {
         const userRef = db.collection('users').doc(normalizedAddress);
         const userDoc = await userRef.get();
 
+        const userData: any = {
+            address: normalizedAddress,
+            lastLoginAt: admin.firestore.Timestamp.now()
+        };
+
+        if (username) userData.username = username;
+        if (email) userData.email = email;
+
         if (!userDoc.exists) {
-            await userRef.set({
-                address: normalizedAddress,
-                createdAt: admin.firestore.Timestamp.now(),
-                lastLoginAt: admin.firestore.Timestamp.now()
-            });
+            userData.createdAt = admin.firestore.Timestamp.now();
+            await userRef.set(userData);
         } else {
-            await userRef.update({
-                lastLoginAt: admin.firestore.Timestamp.now()
-            });
+            await userRef.update(userData);
         }
 
         // 4. Create Custom Token
