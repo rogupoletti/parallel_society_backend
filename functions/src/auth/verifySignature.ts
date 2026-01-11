@@ -56,7 +56,30 @@ export const verify = functions.https.onRequest(async (req, res) => {
             lastLoginAt: admin.firestore.Timestamp.now()
         };
 
-        if (username) userData.username = username;
+        if (username) {
+            // Validate username
+            const usernameRegex = /^[a-z0-9_]{5,20}$/;
+            if (!usernameRegex.test(username)) {
+                res.status(400).send('Invalid username format. Must be 5-20 characters, lowercase letters, numbers, or underscores.');
+                return;
+            }
+
+            // Check uniqueness if it's a new username for this address or a new user
+            const currentUsername = userDoc.exists ? userDoc.data()?.username : null;
+            if (username !== currentUsername) {
+                const usernameSnapshot = await db.collection('users')
+                    .where('username', '==', username)
+                    .limit(1)
+                    .get();
+
+                if (!usernameSnapshot.empty) {
+                    res.status(409).send('Username already taken');
+                    return;
+                }
+            }
+            userData.username = username;
+        }
+
         if (email) userData.email = email;
 
         if (!userDoc.exists) {

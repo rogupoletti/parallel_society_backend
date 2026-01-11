@@ -1,5 +1,6 @@
 import { requestNonce } from './auth/requestNonce';
 import { verify } from './auth/verifySignature';
+import { checkUsername } from './auth/checkUsername';
 import { createProposal } from './proposals/createProposal';
 import { listProposals } from './proposals/listProposals';
 import { getProposal } from './proposals/getProposal';
@@ -11,4 +12,5 @@ import { voteOnProposal } from './proposals/voteOnProposal';
 // Export functions to be deployed
 export const authRequestNonce = requestNonce;
 export const authVerify = verify;
+export const authCheckUsername = checkUsername;
 export { createProposal, listProposals, getProposal, importSnapshot, deleteProposal, voteOnProposal };
