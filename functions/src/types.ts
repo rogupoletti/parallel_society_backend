@@ -75,3 +75,27 @@ export interface CreateProposalRequest {
     timestamp: number;
     snapshotBlock: number;
 }
+
+export interface ProposalUpdate {
+    id?: string;
+    proposalId: string;
+    authorAddress: string;
+    authorName?: string; // Enriched from users collection
+    status: 'Planning' | 'In Progress' | 'Delayed' | 'Completed' | 'Started';
+    content: string; // Markdown text
+    createdAt: any; // Firestore Timestamp
+    attachments?: ProposalUpdateAttachment[];
+}
+
+export interface ProposalUpdateAttachment {
+    name: string;
+    fileType: 'document' | 'image' | 'link';
+    url: string;
+}
+
+export interface AddProposalUpdateRequest {
+    proposalId: string;
+    status: 'Planning' | 'In Progress' | 'Delayed' | 'Completed' | 'Started';
+    content: string;
+    attachments?: ProposalUpdateAttachment[];
+}
