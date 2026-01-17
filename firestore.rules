@@ -22,5 +22,16 @@ service cloud.firestore {
       allow read: if true; // Public listing
       allow write: if false; // Managed by backend functions
     }
+    match /proposalUpdates/{updateId} {
+      // Anyone can read
+      allow read: if true;
+      
+      // Only authenticated users can create
+      // (LUT balance validation happens in Cloud Function)
+      allow create: if request.auth != null;
+      
+      // No updates or deletes (immutable updates)
+      allow update, delete: if false;
+    }
   }
 }
