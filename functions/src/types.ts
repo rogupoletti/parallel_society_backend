@@ -75,3 +75,29 @@ export interface CreateProposalRequest {
     timestamp: number;
     snapshotBlock: number;
 }
+
+export interface ProposalUpdateAttachment {
+    id: string;
+    name: string;
+    type: 'document' | 'image' | 'link';
+    url: string;
+    size?: number;
+}
+
+export interface ProposalUpdate {
+    id?: string;
+    proposalId: string;
+    authorAddress: string;
+    authorName?: string;
+    status: 'Planning' | 'In Progress' | 'Delayed' | 'Completed' | 'Started';
+    content: string;
+    createdAt: any;
+    attachments?: ProposalUpdateAttachment[];
+}
+
+export interface CreateProposalUpdateRequest {
+    proposalId: string;
+    status: 'Planning' | 'In Progress' | 'Delayed' | 'Completed' | 'Started';
+    content: string;
+    attachments?: ProposalUpdateAttachment[];
+}
